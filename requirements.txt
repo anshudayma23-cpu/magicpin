@@ -1,3 +1,4 @@
+# Clean requirements for Render (Linux)
 fastapi==0.110.0
 uvicorn==0.28.0
 pydantic-settings==2.2.1
