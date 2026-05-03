@@ -23,6 +23,15 @@ engine = CompositionEngine()
 classifier = ReplyClassifier()
 composer = ReplyComposer()
 
+@app.get("/")
+async def root():
+    return {
+        "status": "online",
+        "bot": "Vera Merchant AI",
+        "version": settings.BOT_VERSION,
+        "endpoints": ["/v1/healthz", "/v1/metadata", "/v1/context", "/v1/tick", "/v1/reply"]
+    }
+
 @app.get("/v1/healthz")
 async def healthz():
     return {"status": "ok", "contexts_loaded": context_store.counts()}
@@ -112,14 +121,18 @@ async def tick(body: TickRequest) -> TickResponse:
 
     # 4. Sequential Composition (to avoid TPM rate limits)
     results = []
-    for t in tasks:
+    # Limit to 3 triggers per tick to ensure we stay under the 150s timeout
+    max_triggers = 3
+    for i, t in enumerate(tasks[:max_triggers]):
         try:
             res = await t
             results.append(res)
-            await asyncio.sleep(4.1) # Respect Gemini 15 RPM limit
+            # Only sleep if there's another task coming
+            if i < len(tasks[:max_triggers]) - 1:
+                await asyncio.sleep(4.1) 
 
         except Exception as e:
-            logger.error(f"Composition exception for trigger {target_trigger_payloads[len(results)] if len(results) < len(target_trigger_payloads) else '?'}: {type(e).__name__}: {e}")
+            logger.error(f"Composition exception: {type(e).__name__}: {e}")
             results.append(e)
 
 

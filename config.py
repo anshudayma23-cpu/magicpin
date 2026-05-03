@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     MAX_ACTIONS_PER_TICK: int = 20
     
     # Server Config
-    PORT: int = 8081
+    PORT: int = int(os.environ.get("PORT", 8081))
     HOST: str = "0.0.0.0"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
